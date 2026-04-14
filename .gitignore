@@ -1,0 +1,52 @@
+# GauDrishti — Master Gitignore
+
+# Node.js (Frontend)
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Python (Backend & Simulator)
+backend/__pycache__/
+simulator/__pycache__/
+backend/.venv/
+simulator/.venv/
+venv/
+.venv/
+backend/.env
+simulator/.env
+!backend/.env.example
+!simulator/.env.example
+*.py[cod]
+*$py.class
+
+# Supabase Local Development
+supabase/.temp/
+supabase/storage/
+supabase/postgres/
+docker/data/
+
+# IDEs & OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+
+# Firmware (ESP32)
+firmware/gaudrishti_collar/build/
+firmware/gaudrishti_collar/sketch/
+
+# Misc
+.gemini/
+.agents/
+.agent/
+temp/
+tmp/
+node_modules/
+dist/
+dist-ssr/
