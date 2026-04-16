@@ -216,8 +216,14 @@ function ZoneManager({ cooperativeId }) {
   const handleDeleteZone = async (zone, name) => {
     if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
       const zoneIdToDelete = zone.properties?.zone_id || zone.id;
-      // In a real app we'd call an API here.
-      // API call placeholder: await api.deleteZone(zoneIdToDelete);
+      
+      if (zoneIdToDelete) {
+        try {
+          await api.deleteZone(zoneIdToDelete);
+        } catch (err) {
+          console.error('Failed to delete zone in DB:', err);
+        }
+      }
       
       // Update local state
       const updatedZones = zones.filter((z, i) => {
@@ -239,22 +245,34 @@ function ZoneManager({ cooperativeId }) {
     if (!editingZoneName.trim()) return;
     
     const zoneIdToUpdate = editingZoneId;
+    let zoneToUpdate = null;
     
-    // In a real app we'd call an API here. 
-    // Here we're just updating the local state since we don't have a specific update name endpoint.
     const updatedZones = zones.map((z, i) => {
       const currId = z.properties?.zone_id || z.id || (z.properties?.name || `Zone ${i + 1}`);
       if (currId === zoneIdToUpdate) {
-        return {
+        zoneToUpdate = {
           ...z,
           properties: {
             ...z.properties,
             name: editingZoneName
           }
         };
+        return zoneToUpdate;
       }
       return z;
     });
+    
+    if (zoneToUpdate && zoneToUpdate.properties?.zone_id) {
+       try {
+         await api.updateZone({
+           village_id: villageId,
+           zone_geojson: zoneToUpdate,
+           schedule: zoneToUpdate.properties.schedule || DAY_KEYS.reduce((acc, d) => ({ ...acc, [d]: true }), {})
+         });
+       } catch (err) {
+         console.error('Failed to update zone name in DB', err);
+       }
+    }
     
     setZones(updatedZones);
     setEditingZoneId(null);

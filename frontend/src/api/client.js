@@ -40,6 +40,9 @@ export const api = {
   updateZone: (data) =>
     client.post('/zone/update', data),
 
+  deleteZone: (zoneId) => 
+    client.delete(`/zone/${zoneId}`),
+
   // Telemetry
   postTelemetry: (data) =>
     client.post('/telemetry', data),

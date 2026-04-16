@@ -768,11 +768,29 @@ async def update_zone(payload: ZoneUpdatePayload):
     }
 
     try:
-        result = db.table("zones").insert(zone_data).execute()
+        # Check if the geojson already has an ID, meaning we should update
+        zone_id = payload.zone_geojson.get("properties", {}).get("zone_id")
+        
+        if zone_id:
+            result = db.table("zones").update(zone_data).eq("zone_id", zone_id).execute()
+        else:
+            result = db.table("zones").insert(zone_data).execute()
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to create zone: {e}")
 
     return {"status": "ok", "zone_id": result.data[0]["zone_id"] if result.data else None}
+
+# --- DELETE /zone/{zone_id} ---
+@app.delete("/zone/{zone_id}", status_code=status.HTTP_200_OK, tags=["Zones"])
+async def delete_zone(zone_id: str):
+    """Deletes a zone by ID."""
+    db = get_supabase()
+    try:
+        result = db.table("zones").delete().eq("zone_id", zone_id).execute()
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to delete zone: {e}")
+
+    return {"status": "ok", "message": f"Deleted zone {zone_id}"}
 
 
 # --- GET /dashboard/device/{device_id}/history ---
