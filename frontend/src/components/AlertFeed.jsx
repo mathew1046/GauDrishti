@@ -3,6 +3,7 @@ import {
   AlertTriangle, Thermometer, Heart, Activity,
   Clock, CheckCircle, Phone, XCircle, HelpCircle,
 } from 'lucide-react';
+import api from '../api/client';
 
 const SEVERITY_ORDER = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
 
@@ -23,6 +24,7 @@ const OUTCOME_LABELS = {
 function AlertFeed({ alerts, onRefresh, loading }) {
   const [severityFilter, setSeverityFilter] = useState('ALL');
   const [outcomeFilter, setOutcomeFilter] = useState('ALL');
+  const [updatingAlertId, setUpdatingAlertId] = useState(null);
 
   const filteredAlerts = useMemo(() => {
     let filtered = [...alerts];
@@ -49,6 +51,21 @@ function AlertFeed({ alerts, onRefresh, loading }) {
     return date.toLocaleDateString('en-IN', {
       day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
     });
+  };
+
+  const handleUpdateAlert = async (alertId, outcome) => {
+    if (!alertId) return;
+    setUpdatingAlertId(alertId);
+    try {
+      await api.updateAlert(alertId, outcome);
+      if (onRefresh) {
+        await onRefresh();
+      }
+    } catch (err) {
+      console.error('Failed to update alert:', err);
+    } finally {
+      setUpdatingAlertId(null);
+    }
   };
 
   return (
@@ -164,10 +181,29 @@ function AlertFeed({ alerts, onRefresh, loading }) {
                     <Clock size={12} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
                     {formatTime(alert.timestamp)}
                   </span>
-                  <span className={`outcome-badge ${alert.outcome}`}>
-                    <OutcomeIcon size={12} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
-                    {OUTCOME_LABELS[alert.outcome] || alert.outcome}
-                  </span>
+                  
+                  {alert.outcome === 'PENDING' ? (
+                    <div className="outcome-actions">
+                      <select 
+                        className="filter-select outcome-select"
+                        style={{ padding: '2px 4px', fontSize: '11px', width: 'auto' }}
+                        onChange={(e) => handleUpdateAlert(alert.alert_id, e.target.value)}
+                        value="PENDING"
+                        disabled={updatingAlertId === alert.alert_id}
+                      >
+                        <option value="PENDING" disabled>Manage...</option>
+                        <option value="TREATED">Mark Treated</option>
+                        <option value="VET_CALLED">Vet Called</option>
+                        <option value="FALSE_ALARM">False Alarm</option>
+                      </select>
+                      {updatingAlertId === alert.alert_id && <span style={{fontSize: '11px', marginLeft: '4px'}}>...</span>}
+                    </div>
+                  ) : (
+                    <span className={`outcome-badge ${alert.outcome}`}>
+                      <OutcomeIcon size={12} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                      {OUTCOME_LABELS[alert.outcome] || alert.outcome}
+                    </span>
+                  )}
                 </div>
               </div>
             );

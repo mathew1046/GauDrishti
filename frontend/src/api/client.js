@@ -32,6 +32,9 @@ export const api = {
 
   getDeviceHistory: (deviceId, hours = 24) =>
     client.get(`/dashboard/device/${deviceId}/history`, { params: { hours } }),
+    
+  updateAlert: (alertId, outcome) =>
+    client.put(`/alerts/${alertId}`, { outcome }),
 
   // Zone endpoints
   getZones: (villageId) =>
@@ -39,6 +42,9 @@ export const api = {
 
   updateZone: (data) =>
     client.post('/zone/update', data),
+
+  deleteZone: (zoneId) => 
+    client.delete(`/zone/${zoneId}`),
 
   // Telemetry
   postTelemetry: (data) =>
