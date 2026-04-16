@@ -32,6 +32,9 @@ export const api = {
 
   getDeviceHistory: (deviceId, hours = 24) =>
     client.get(`/dashboard/device/${deviceId}/history`, { params: { hours } }),
+    
+  updateAlert: (alertId, outcome) =>
+    client.put(`/alerts/${alertId}`, { outcome }),
 
   // Zone endpoints
   getZones: (villageId) =>

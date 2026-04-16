@@ -156,6 +156,9 @@ class ZoneUpdatePayload(BaseModel):
     zone_geojson: dict
     schedule: dict
 
+class AlertUpdatePayload(BaseModel):
+    outcome: OutcomeType
+
 # ============================================
 # Helper Functions
 # ============================================
@@ -791,6 +794,34 @@ async def delete_zone(zone_id: str):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to delete zone: {e}")
 
     return {"status": "ok", "message": f"Deleted zone {zone_id}"}
+
+# --- PUT /alerts/{alert_id} ---
+@app.put("/alerts/{alert_id}", status_code=status.HTTP_200_OK, tags=["Alerts"])
+async def update_alert(alert_id: str, payload: AlertUpdatePayload):
+    """Update the outcome of a specific alert."""
+    db = get_supabase()
+    now = datetime.now(timezone.utc).isoformat()
+    
+    try:
+        alert_res = db.table("alerts").select("device_id").eq("alert_id", alert_id).execute()
+        if not alert_res.data:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alert not found")
+        
+        device_id = alert_res.data[0]["device_id"]
+        
+        result = db.table("alerts").update({
+            "outcome": payload.outcome.value,
+            "outcome_ts": now,
+            "vet_confirmed": payload.outcome.value == "VET_CALLED"
+        }).eq("alert_id", alert_id).execute()
+        
+        # Reset device state if treated or vet called
+        if payload.outcome.value in ("TREATED", "VET_CALLED"):
+            db.table("devices").update({"alert_state": "NORMAL"}).eq("device_id", device_id).execute()
+            
+        return {"status": "ok", "alert_id": alert_id, "outcome": payload.outcome.value}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to update alert: {e}")
 
 
 # --- GET /dashboard/device/{device_id}/history ---
